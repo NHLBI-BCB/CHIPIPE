@@ -1,0 +1,212 @@
+================================================================================
+    PeakAnnotator Overview 
+================================================================================
+
+////////////////////////////////////////////////////////////////////////////////
+INSTALLATION
+////////////////////////////////////////////////////////////////////////////////
+
+This folder contains the executable file PeakAnnotator.jar and the archive 
+PeakAnnotator.src.zip which contains source directories.  
+You can move the "PeakAnnotator.jar" exe file to anywhere in your file system 
+and set the PATH to this location.
+
+////////////////////////////////////////////////////////////////////////////////
+USAGE
+////////////////////////////////////////////////////////////////////////////////
+
+You should have Java 1.5 or later installed.
+In order to launch the program, open a terminal window, go to the folder
+where the jar file is located, and type
+
+java -jar -Xmx512m peakAnnotator.jar <-u utility> [options]
+
+Options include:
+
+help,-?                		displays help information
+-u,--utility <string>		utility: NDG, TSS, ODS
+-p,--peakFile <string>		input peak file
+-a,--annotationFile <string>	input annotation GTF or BED file
+-p2,--peakFile2 <string>	input second peak file
+-o,--outDir <string>    	output folder
+-x,--prefix <string>    	string to add to output file names
+-s,--symbolFile <string>	optional input symbol file
+-g,--geneType <string>  	gene type for annotation: protein_coding or all
+-cs,--chrSizeFile <string>      file indicating chromosome sizes
+-r,--numRandomDatasets<integer> number of random datasets to generate when calculating overlap p value (default 1000)
+
+Press -u <utility name> to get help about the options specific to each utility.
+
+*** -u/--utility
+This can be one of "NDG, TSS, ODS"
+1. NDG - For each locus, search for its Nearest Downstream Genes on both 
+the forward and reverse strand. 
+If the position of the locus is within a gene, the program describes 
+in which part of that gene the locus is located. 
+2. TSS - For each locus, find its closest TSS (transcription start site). 
+In order to do this, the program searches both upstream and downstream for 
+the closest genes to the genomic coordinate.
+3. ODS - Compare between two position files, to identify overlapping and 
+unique genomic locations.
+
+*** -p/--peakFile 
+The file lists the genomic coordinates output by a peak calling program 
+(or obtained in some other way). The format should be tab/space delimited, 
+where each locus is described by its "chromosome", "start" and "end" location.
+The start location should be 1 based
+PLEASE REMOVE ANY HEADER LINES FROM THE FILE IF THESE ARE PRESENT
+
+*** -a/--annotationFile
+This is a REQUIRED parameter for the "NDG" and "TSS" utilities.
+The file lists the features/genes of interest and their locations in the 
+genome, in one of two formats:
+1. GTF format - can be downloaded from Ensembl ftp site at: 
+		http://www.ensembl.org/info/data/ftp/index.html
+		GTF FILES ARE EXPECTED TO CONTAIN THE SUFFIX ".gtf"
+
+The GTF format is recommended unless you are interested in annotating your 
+peaks relative to features other than genes. In that case you can use the BED 
+file format described below.
+		
+2. BED format - can be downloaded from the UCSC table browser tool. 
+		The BED format is defined in "http://genome.ucsc.edu/FAQ/FAQformat#format1".
+
+Requirements for BED file format - NDG utility:
+The following fields (columns) are required: 
+chrom, chromStart, chrEnd, name, strand, thickStart, thickEnd, blockCount, 
+blockSizes, blockStarts.
+
+Requirements for BED file format - TSS utility:
+The following fields (columns) are required: 
+chrom, chromStart, chrEnd, strand.
+
+Please note that according to BED format, lower-numbered fields (columns) must 
+always be present if higher-numbered fields are used. Hence, although the field 
+"name" is not required for TSS, it should be specified in the file (inserting any 
+character in column number 4 in the file is sufficient). 
+
+***-p2/--peakFile2
+This is a REQUIRED parameter for the "ODS" utility
+The format is the same as for the first peakFile (refer to the -p/--peakFile help).
+
+*** -o/--outDir
+This is a REQUIRED parameter for peakAnnotator.
+An output directory must be specified where PeakAnnotator can write result files. 
+
+*** -x/--prefix
+String to add to output file names, for example when the same peak files are to be 
+analyzed using different parameters.
+
+*** -s/--symbolFile
+This is an optional parameter for the "NDG" and "TSS" utilities.
+The symbol file maps accession numbers to gene symbols; these can be obtained using 
+the BioMart feature of Ensembl or from the UCSC table browser. 
+This option is necessary when using BED format annotation file, since these do not 
+contain gene symbols. A symbol file is not required for Ensembl GTF annotation files. 
+
+***-g/--geneType
+When the annotation file is in GTF format, the user has the option to choose the 
+category of genes considered for annotation: either "protein_coding" or "all". 
+"all" includes protein coding as well as non-protein coding genes such as miRNAs 
+and other non-coding RNAs.
+
+***-cs/--chrSizeFile
+This is an optional parameter for the "ODS" utility.
+This file specify the size of each chromosome, and if its provided, a randomization test will be done
+in order to calculate the intersection p value, and enrichment over random.
+
+***-r,--numRandomDatasets
+Number of random datasets to generate when calculating overlap p value (default 1000).
+Random regions matched by chromosome and length to the first regions file, are intersected with the second.
+
+
+////////////////////////////////////////////////////////////////////////////////
+OUTPUT FILES
+////////////////////////////////////////////////////////////////////////////////
+
+The output of the "NDG" utility is three tab delimited files:
+**************************************************************
+
+A. "peakFileName.ndg.peakFileNameSuffix"
+
+For example, if the input peak file is "myPeaks.test, the output file will be 
+"myPeaks.ndg.test". 
+This file identifies the closest downstream genes for each locus, and contains 
+the following fields:
+	1. Chromosome 
+	2. Start
+	3. End 	- These first three columns describe the genomic location of the peak.
+	4. # Overlapped_Genes - Number of transcripts overlapping the genomic loci. 
+	   Details about these genes are reported in the second output file described below. 
+	5. Downstream_FW_Gene	- ID of the closest downstream gene on the forward strand.
+        6. Symbol	- Symbol of the closest downstream gene on the forward strand.
+	7. Distance	- Peak distance to its closest downstream gene on the forward strand.
+	8. Downstream_REV_gene	- ID of the closest downstream gene on the reverse strand.
+        9. Symbol	- Symbol of the closest downstream gene on the reverse strand.
+	10. Distance	- Peak distance to its closest downstream gene on the reverse strand.
+	
+B. "peakFileName.overlap.peakFileNameSuffix"
+
+For example, if the input peak file is "myPeaks.test", the output file will be 
+"myPeaks.overlap.test". 
+This file describes the transcripts overlapping the peaks, if any such are found.
+	1. Chromosome 
+	2. Start
+	3. End	- These first three columns describe the genomic location of the peak.
+	4. OverlapGene	- Overlapping gene ID
+        5. Symbol	- Overlapping gene symbol
+	6. Overlap_Begin	- In which part of the gene does the peak's start position overlap
+	7. Overlap_Center	- In which part of the gene does the peak's central position overlap
+	8. Overlap_End	- In which part of the gene does the peak's end position overlap
+
+C. "peakFileName.summary.peakFileNameSuffix"
+
+For example, if the input peak file is "myPeaks.test", the output file will be 
+"myPeaks.summary.test". 
+This file contains the following fields
+	1. Chromosome 
+	2. Start
+	3. End 	- These first three columns describe the genomic location of the peak.
+	4. OverlapGene	- Overlapping gene Symbol.
+	5. Downstream Gene	- Nearest downstream gene.
+	6. Distance	- Peak distance to its nearest downstream gene.
+
+The output of the TSS option is a tab-delimited file:
+*****************************************************
+
+"peakFileName.tss.peakFileNameSuffix"
+
+For example, if the input peak file is "myPeaks.test", the output file will be 
+"myPeaks.tss.test"
+
+This file contains the following fields:
+	1. Chromosome 
+	2. Start
+	3. End	- These first three columns describe the genomic location of the peak.
+	4. Distance	- The distance from the peak to its closest TSS.
+	5. GeneStart 	- The start location of the closest gene on the genome.
+	6. GeneEnd 	- The end location of the closest gene on the genome.
+	4. ClosestTSS_ID	- ID of the closest gene.
+        5. Symbol	- Symbol of the closest gene.
+	6. Strand	- Strand of closest gene.
+
+The output of the "ODS" option is three tab delimited files:
+******************************************************************
+
+A. "peakFile1_peakFile2.overlap.txt"
+
+For example, if the input peak files are "myPeaks1.txt" and "myPeaks2.txt", 
+the output file will be "myPeaks1_myPeaks2.overlap.txt"
+
+Each line in this file describes an overlap event between two genomic loci, and 
+has the following fields: 
+	1. Chromosome
+	2. peakFile1_Start 	- Start location of the first genomic locus
+	3. peakFile1_End	- End location of the first genomic locus
+	4. peakFile1_Name	- Name of the first genomic locus (if it exist in the input file)
+	5. peakFile2_Start	- Start location of the second genomic locus
+	6. peakFile2_End	- End location of the second genomic locus
+	7. peakFile2_Name	- Name of the second genomic locus (if it exist in the input file)
+
+B+C. Unique files - one file for each genomic input file, which describes the unique peaks
+
