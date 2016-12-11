@@ -1,0 +1,13 @@
+To install CHIPIPE follow these steps:
+
+1. Download the zip file CHIPIPE.zip to a directory of your choice. The opt directory is recommended.
+
+2. Unzip the file:
+	unzip CHIPIPE.zip
+
+3. Edit your .bashrc file to add the CHIPIPE path to PATH:
+	Open a terminal Ctrl+Alt*t
+	cd
+	vim .bashrc or nano .bashrc or gedit .bashrc
+	add to the end of the file the CHIPIPE Path
+	PATH=$PATH:CHIPIPE_PATH

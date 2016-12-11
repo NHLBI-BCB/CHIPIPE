@@ -1,0 +1,123 @@
+#! /bin/bash
+## Copyright 2016 Blanca Bagnos, Gonzalo Perez y Pablo Garcia.
+## This file is part of CHIPIPE.
+
+## CHIPIPE is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+
+##  CHIPIPE is distributed in the hope that it will be useful,
+##  but WITHOUT ANY WARRANTY; without even the implied warranty of
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##  GNU General Public License for more details.
+
+##  You should have received a copy of the GNU General Public License
+##  along with CHIPIPE.  If not, see <http://www.gnu.org/licenses/>.
+
+if [ $# -eq 0 ]
+then
+   echo "Usage: CHIPIPE <parameter_file.txt>"
+   echo "> Do you want to create a parameter_file.txt? Type 0 for YES, 1 for NO"
+   read ANSWER
+## Creating Parameter File
+   if [ $ANSWER -eq 0 ]
+   then
+	echo "> Enter Working Directory:"
+	read W_DIR
+   	echo "> Enter Experiment Name:"
+   	read EXP_NAME
+   	echo "> Enter Genome URL:"
+   	read URL_GENOME
+   	echo "> Enter Annotation(gtf) URL"
+   	read URL_ANNOT
+  	 echo "> Enter Control URL:"
+   	read URL_CONTROL
+   	echo "> Enter CHIP URL:"
+   	read URL_CHIP
+	echo "working_directory: $W_DIR" > $W_DIR/parameter_file_$EXP_NAME.txt
+	echo "experiment_name: $EXP_NAME" >> $W_DIR/parameter_file_$EXP_NAME.txt
+	echo "genome: $URL_GENOME" >> $W_DIR/parameter_file_$EXP_NAME.txt
+	echo "annotation: $URL_ANNOT" >> $W_DIR/parameter_file_$EXP_NAME.txt
+	echo "control_sample: $URL_CONTROL" >> $W_DIR/parameter_file_$EXP_NAME.txt
+	echo "chip_sample: $URL_CHIP" >> $W_DIR/parameter_file_$EXP_NAME.txt
+	echo "Parameter file created at $W_DIR named parameter_file_$EXP_NAME.txt"
+	## Asking if they want to run CHIPIPE with new parameter_file created
+	echo "> Do yo want to run CHIPIPE with the parameter file created? Type 0 for YES, 1 for NO"
+	read ANSWER_2
+	if [ $ANSWER_2 -eq 0 ]
+	then
+		## Creating Working Directory structure and Building reference index
+
+		cd $W_DIR
+		mkdir $EXP_NAME
+		cd $EXP_NAME
+
+		echo "Log file CHIPIPE" > $W_DIR/logs.txt
+		echo "working_directory:" $W_DIR >> $W_DIR/logs.txt
+		echo "experiment_name:" $EXP_NAME >> $W_DIR/logs.txt
+
+		echo "Creating Working Directory Structure"
+		echo "Creating Working Directory Structure" >> logs.txt
+
+		working_directory.sh $W_DIR $EXP_NAME $URL_GENOME $URL_ANNOT
+		## Sample processing for CONTROL:
+		CONTROL="control"
+		qsub -N control -o log_control $HOME/opt/CHIPIPE_FOLDER/samples_processing.sh $W_DIR $EXP_NAME $CONTROL $URL_CONTROL
+		sleep 1m
+		## Sample processing for CHIP:
+		CHIP="chip"
+		qsub -N chip -o log_chip $HOME/opt/CHIPIPE_FOLDER/samples_processing.sh $W_DIR $EXP_NAME $CHIP $URL_CHIP
+	fi
+        if [ $ANSWER_2 -eq 1 ]
+        then
+		exit
+        fi
+   fi
+## Information about parameter file structure
+   if [ $ANSWER -eq 1 ]
+   then
+	echo "Parameter File structure MUST be:"
+	echo "working_directory: "
+	echo "experiment_name: "
+	echo "genome: "
+	echo "annotation: "
+	echo "control_sample: "
+	echo "chip_sample: "
+   	exit
+   fi
+
+   else
+	## Reading parameters from PARAMETER_FILE.txt
+
+	PARAM_FILE=$1
+
+	W_DIR=$( grep working_directory: $PARAM_FILE | awk '{print $2}' )
+	EXP_NAME=$( grep experiment_name: $PARAM_FILE | awk '{print $2}' )
+	URL_GENOME=$( grep genome: $PARAM_FILE | awk '{print $2}' )
+	URL_ANNOT=$( grep annotation: $PARAM_FILE | awk '{print $2}' )
+	URL_CONTROL=$( grep control_sample: $PARAM_FILE | awk '{print $2}' )
+	URL_CHIP=$( grep chip_sample: $PARAM_FILE | awk '{print $2}' )
+
+	## Creating Working Directory structure and Building reference index
+
+	cd $W_DIR
+	mkdir $EXP_NAME
+	cd $EXP_NAME
+
+	echo "Log file CHIPIPE" > logs.txt
+	echo "working_directory:" $W_DIR >> logs.txt
+	echo "experiment_name:" $EXP_NAME >> logs.txt
+	echo "Creating Working Directory Structure"
+	echo "Creating Working Directory Structure" >> logs.txt
+
+	working_directory.sh $W_DIR $EXP_NAME $URL_GENOME $URL_ANNOT
+
+                ## Sample processing for CONTROL:
+                CONTROL="control"
+                qsub -N control -o log_control $HOME/opt/CHIPIPE_FOLDER/samples_processing.sh $W_DIR $EXP_NAME $CONTROL $URL_CONTROL
+                sleep 1m
+                ## Sample processing for CHIP:
+                CHIP="chip"
+                qsub -N chip -o log_chip $HOME/opt/CHIPIPE_FOLDER/samples_processing.sh $W_DIR $EXP_NAME $CHIP $URL_CHIP
+   fi
