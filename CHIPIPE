@@ -17,6 +17,13 @@
 
 if [ $# -eq 0 ]
 then
+   echo " ========================================== "
+   echo "   ____ _   _ ___ ____ ___ ____  _____ "
+   echo "  / ___| | | |_ _|  _ \_ _|  _ \| ____| "
+   echo " | |   | |_| || || |_) | || |_) |  _| "
+   echo " | |___|  _  || ||  __/| ||  __/| |___ "
+   echo "  \____|_| |_|___|_|  |___|_|   |_____| "
+   echo " ========================================== "
    echo "Usage: CHIPIPE <parameter_file.txt>"
    echo "> Do you want to create a parameter_file.txt? Type 0 for YES, 1 for NO"
    read ANSWER
